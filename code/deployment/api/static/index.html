@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dota 2 Match Predictor</title>
+    <!-- Include Select2 CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .hero-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .hero-list select {
+            width: 200px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dota 2 Match Predictor</h1>
+
+    <div>
+        <h3>Select Radiant Heroes:</h3>
+        <div class="hero-list" id="radiant-heroes">
+            <!-- Dropdowns will be generated here -->
+        </div>
+    </div>
+
+    <div>
+        <h3>Select Dire Heroes:</h3>
+        <div class="hero-list" id="dire-heroes">
+            <!-- Dropdowns will be generated here -->
+        </div>
+    </div>
+
+    <button onclick="predictMatch()">Predict Match Winner</button>
+
+    <h2 id="result"></h2>
+
+    <!-- Include Select2 JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        const heroDropdowns = 5;  // We have 5 slots for both Radiant and Dire heroes
+        let heroData = {};
+
+        // Fetch heroes and populate dropdowns
+        async function fetchHeroes() {
+            const response = await fetch("http://127.0.0.1:8000/heroes/");
+            heroData = await response.json();
+
+            // Populate dropdowns for Radiant and Dire heroes
+            createHeroDropdowns("radiant-heroes");
+            createHeroDropdowns("dire-heroes");
+
+            // Initialize Select2 on the newly created dropdowns
+            initializeSelect2();
+        }
+
+        // Create hero dropdowns dynamically
+        function createHeroDropdowns(containerId) {
+            const container = document.getElementById(containerId);
+            for (let i = 0; i < heroDropdowns; i++) {
+                const select = document.createElement("select");
+                select.classList.add("hero-select");
+
+                Object.entries(heroData).forEach(([id, name]) => {
+                    const option = document.createElement("option");
+                    option.value = id;
+                    option.text = name;
+                    select.add(option);
+                });
+
+                container.appendChild(select);
+            }
+        }
+
+        // Initialize Select2 on all dropdowns with class 'hero-select'
+        function initializeSelect2() {
+            const selects = document.querySelectorAll('.hero-select');
+            selects.forEach(select => {
+                $(select).select2({
+                    placeholder: 'Select a hero',
+                    allowClear: true
+                });
+            });
+        }
+
+        // Gather selected heroes and make the prediction request
+        async function predictMatch() {
+            const radiantHeroes = Array.from(document.querySelectorAll("#radiant-heroes select")).map(select => parseInt(select.value));
+            const direHeroes = Array.from(document.querySelectorAll("#dire-heroes select")).map(select => parseInt(select.value));
+
+            const response = await fetch("http://127.0.0.1:8000/predict/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    radiant_heroes: radiantHeroes,
+                    dire_heroes: direHeroes
+                })
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = `Winner: ${result.winner}`;
+        }
+
+        // Initialize the page by fetching heroes
+        fetchHeroes();
+    </script>
+    <!-- jQuery (required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</body>
+</html>

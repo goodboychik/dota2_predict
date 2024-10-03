@@ -1,20 +1,12 @@
 import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
 import joblib
-import os
-
-# Set up the path
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(CURRENT_DIR, "../../../models")
-MODEL_FILE = os.path.join(DATA_DIR, "RandomForestDota.pkl")
 
 # Load the Random Forest model
-rf_model = joblib.load(MODEL_FILE)
+rf_model = joblib.load("models/RandomForestDota.pkl")
 
 # Create the FastAPI app
 app = FastAPI()
@@ -63,9 +55,10 @@ hero_ids = {1: 'Anti-Mage', 2: 'Axe', 3: 'Bane', 4: 'Bloodseeker', 5: 'Crystal M
 @app.post("/predict/")
 def predict_match_outcome(match_data: MatchData):
     # Create binary feature vector
+    for i in match_data.dire_heroes:
+        print(hero_ids[i])
     features = [1 if hero_id in match_data.radiant_heroes else 0 for hero_id in hero_ids] + \
                [1 if hero_id in match_data.dire_heroes else 0 for hero_id in hero_ids]
-
     # Predict match outcome using the Random Forest model
     prediction = rf_model.predict([features])[0]
 
@@ -75,11 +68,6 @@ def predict_match_outcome(match_data: MatchData):
 @app.get("/heroes/")
 def get_heroes():
     return hero_ids
-
-
-@app.get("/prediction/", response_class=HTMLResponse)
-async def get_prediction_page():
-    return FileResponse('static/index.html')
 
 
 if __name__ == "__main__":

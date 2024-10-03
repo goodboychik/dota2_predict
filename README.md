@@ -87,8 +87,11 @@ The Dota 2 Match Predictor is a web application built using FastAPI that predict
 
 - **POST /predict/**: Predicts the match outcome based on selected heroes.
   - **Request Body**:
+    
     • List of 5 unique hero IDs for Radiant team
+    
     • List of 5 unique hero IDs for Dire team
+    
     ```json
     {
       "radiant_heroes": [1, 2, 3, 4, 5],
@@ -96,7 +99,9 @@ The Dota 2 Match Predictor is a web application built using FastAPI that predict
     }
     ```
   - **Response**:
-    "Radiant" or "Dire"
+    
+    • "Radiant" or "Dire"
+    
     ```json
     {
       "winner": "Radiant"
